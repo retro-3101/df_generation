@@ -42,8 +42,6 @@ class StyleGANGenerator():
     self.build()
     if os.path.isfile(getattr(self, 'model_path', '')):
       self.load()
-    elif os.path.isfile(getattr(self, 'tf_model_path', '')):
-      self.convert_tf_model()
     else:
       self.logger.warning(f'No pre-trained model will be loaded!')
 
@@ -78,72 +76,6 @@ class StyleGANGenerator():
     self.lod = self.model.synthesis.lod.to(self.cpu_device).tolist()
     self.logger.info(f'  `lod` of the loaded model is {self.lod}.')
 
-  def convert_tf_model(self, test_num=10):
-    import sys
-    import pickle
-    import tensorflow as tf
-    os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
-    sys.path.append(model_settings.BASE_DIR + '/stylegan_tf_official')
-
-    self.logger.info(f'Loading tensorflow model from `{self.tf_model_path}`.')
-    tf.InteractiveSession()
-    with open(self.tf_model_path, 'rb') as f:
-      _, _, tf_model = pickle.load(f)
-    self.logger.info(f'Successfully loaded!')
-
-    self.logger.info(f'Converting tensorflow model to pytorch version.')
-    tf_vars = dict(tf_model.__getstate__()['variables'])
-    tf_vars.update(
-        dict(tf_model.components.mapping.__getstate__()['variables']))
-    tf_vars.update(
-        dict(tf_model.components.synthesis.__getstate__()['variables']))
-    state_dict = self.model.state_dict()
-    for pth_var_name, tf_var_name in self.model.pth_to_tf_var_mapping.items():
-      if 'ToRGB_lod' in tf_var_name:
-        lod = int(tf_var_name[len('ToRGB_lod')])
-        lod_shift = 10 - int(np.log2(self.resolution))
-        tf_var_name = tf_var_name.replace(f'{lod}', f'{lod - lod_shift}')
-      if tf_var_name not in tf_vars:
-        self.logger.debug(f'Variable `{tf_var_name}` does not exist in '
-                          f'tensorflow model.')
-        continue
-      self.logger.debug(f'  Converting `{tf_var_name}` to `{pth_var_name}`.')
-      var = torch.from_numpy(np.array(tf_vars[tf_var_name]))
-      if 'weight' in pth_var_name:
-        if 'dense' in pth_var_name:
-          var = var.permute(1, 0)
-        elif 'conv' in pth_var_name:
-          var = var.permute(3, 2, 0, 1)
-      state_dict[pth_var_name] = var
-    self.logger.info(f'Successfully converted!')
-
-    self.logger.info(f'Saving pytorch model to `{self.model_path}`.')
-    for var_name in self.model_specific_vars:
-      del state_dict[var_name]
-    torch.save(state_dict, self.model_path)
-    self.logger.info(f'Successfully saved!')
-
-    self.load()
-
-    
-    if test_num <= 0 or not tf.test.is_built_with_cuda():
-      return
-    self.logger.info(f'Testing conversion results.')
-    self.model.eval().to(self.run_device)
-    total_distance = 0.0
-    for i in range(test_num):
-      latent_code = self.easy_sample(1)
-      tf_output = tf_model.run(latent_code, 
-                               None, 
-                               truncation_psi=self.truncation_psi,
-                               truncation_cutoff=self.truncation_layers,
-                               randomize_noise=self.randomize_noise)
-      pth_output = self.synthesize(latent_code)['image']
-      distance = np.average(np.abs(tf_output - pth_output))
-      self.logger.debug(f'  Test {i:03d}: distance {distance:.6e}.')
-      total_distance += distance
-    self.logger.info(f'Average distance is {total_distance / test_num:.6e}.')
-
   def sample(self, num, latent_space_type='Z'):
 
     latent_space_type = latent_space_type.upper()
@@ -156,7 +88,8 @@ class StyleGANGenerator():
     else:
       raise ValueError(f'Latent space type `{latent_space_type}` is invalid!')
 
-    return latent_codes.astype(np.float32)
+    return self.preprocess(latent_codes.astype(np.float32),
+                           latent_space_type)
 
   def preprocess(self, latent_codes, latent_space_type='Z'):
 
@@ -177,9 +110,9 @@ class StyleGANGenerator():
 
     return latent_codes.astype(np.float32)
 
-  def easy_sample(self, num, latent_space_type='Z'):
-    return self.preprocess(self.sample(num, latent_space_type),
-                           latent_space_type)
+#   def easy_sample(self, num, latent_space_type='Z'):
+#     return self.preprocess(self.sample(num, latent_space_type),
+#                            latent_space_type)
 
   def synthesize(self,
                  latent_codes,
@@ -252,7 +185,10 @@ class StyleGANGenerator():
     if generate_image:
       images = self.model.synthesis(wps)
       results['image'] = self.get_value(images)
-
+    
+    if 'image' in results:
+      results['image'] = self.postprocess(results['image'])
+    
     return results
   
   def check_attr(self, attr_name):
@@ -286,13 +222,10 @@ class StyleGANGenerator():
 
     return images
 
-  def easy_synthesize(self, latent_codes, **kwargs):
-    """Wraps functions `synthesize()` and `postprocess()` together."""
-    outputs = self.synthesize(latent_codes, **kwargs)
-    if 'image' in outputs:
-      outputs['image'] = self.postprocess(outputs['image'])
-
-    return outputs
+#   def easy_synthesize(self, latent_codes, **kwargs):
+#     """Wraps functions `synthesize()` and `postprocess()` together."""
+#     outputs = self.synthesize(latent_codes, **kwargs)
+    
   
   def get_batch_inputs(self, latent_codes):
     total_num = latent_codes.shape[0]
