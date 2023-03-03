@@ -1,13 +1,12 @@
 import os.path
 
 BASE_DIR = os.path.dirname(os.path.relpath(__file__))
-
 MODEL_DIR = BASE_DIR
 
 MODEL_POOL = {
     'stylegan_ffhq': {
         'tf_model_path': MODEL_DIR + '/karras2019stylegan-ffhq-1024x1024.pkl',
-        'model_path': MODEL_DIR + '/stylegan_ffhq.pth',
+        'model_path': './stylegan_ffhq.pth',
         'gan_type': 'stylegan',
         'dataset_name': 'ffhq',
         'latent_space_dim': 512,
