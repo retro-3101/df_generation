@@ -28,7 +28,7 @@ class StyleGANGenerator():
     self.run_device = 'cuda' if self.use_cuda else 'cpu'
     self.cpu_device = 'cpu'
 
-    # Check necessary settings.
+  
     self.check_attr('gan_type')
     self.check_attr('latent_space_dim')
     self.check_attr('resolution')
@@ -38,14 +38,14 @@ class StyleGANGenerator():
     self.channel_order = getattr(self, 'channel_order', 'RGB').upper()
     assert self.channel_order in ['RGB', 'BGR']
 
-    # Build model and load pre-trained weights.
+    
     self.build()
     if os.path.isfile(getattr(self, 'model_path', '')):
       self.load()
     else:
       self.logger.warning(f'No pre-trained model will be loaded!')
 
-    # Change to inference mode and GPU mode if needed.
+    
     assert self.model
     self.model.eval().to(self.run_device)
 
@@ -110,9 +110,6 @@ class StyleGANGenerator():
 
     return latent_codes.astype(np.float32)
 
-#   def easy_sample(self, num, latent_space_type='Z'):
-#     return self.preprocess(self.sample(num, latent_space_type),
-#                            latent_space_type)
 
   def synthesize(self,
                  latent_codes,
@@ -126,7 +123,7 @@ class StyleGANGenerator():
 
     latent_space_type = latent_space_type.upper()
     latent_codes_shape = latent_codes.shape
-    # Generate from Z space.
+   
     if latent_space_type == 'Z':
       if not (len(latent_codes_shape) == 2 and
               latent_codes_shape[0] <= self.batch_size and
@@ -143,7 +140,7 @@ class StyleGANGenerator():
       results['z'] = latent_codes
       results['w'] = self.get_value(ws)
       results['wp'] = self.get_value(wps)
-    # Generate from W space.
+   
     elif latent_space_type == 'W':
       if not (len(latent_codes_shape) == 2 and
               latent_codes_shape[0] <= self.batch_size and
@@ -158,7 +155,7 @@ class StyleGANGenerator():
       wps = self.model.truncation(ws)
       results['w'] = latent_codes
       results['wp'] = self.get_value(wps)
-    # Generate from W+ space.
+    
     elif latent_space_type == 'WP':
       if not (len(latent_codes_shape) == 3 and
               latent_codes_shape[0] <= self.batch_size and
@@ -220,12 +217,7 @@ class StyleGANGenerator():
     if self.channel_order == 'BGR':
       images = images[:, :, :, ::-1]
 
-    return images
-
-#   def easy_synthesize(self, latent_codes, **kwargs):
-#     """Wraps functions `synthesize()` and `postprocess()` together."""
-#     outputs = self.synthesize(latent_codes, **kwargs)
-    
+    return images    
   
   def get_batch_inputs(self, latent_codes):
     total_num = latent_codes.shape[0]
