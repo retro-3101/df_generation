@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>My App</title>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+    <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.js"></script>
+    <link rel="stylesheet" href="https://code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css">
+
+    <style>
+.slider {
+position: fixed;
+top: 25%;
+left: 30%;
+transform: translate(-50%,-50%);
+width: 500px;
+height: 60px;
+background: #ffffff;
+border-radius: 20px;
+display: flex;
+align-items: center;
+}
+.slider p {
+font-size: 26px;
+font-weight: 600;
+font-family: Open Sans;
+padding-left: 30px;
+color: black;
+}
+.slider input[type="range"]::-webkit-slider-thumb  {
+-webkit-appearance:none !important;
+width: 420px;
+height: 2px;
+background: black;
+border: none;
+outline: none;
+}
+.slider input[type="range"]::-webkit-slider-thumb {
+-webkit-appearance: none !important;
+width: 30px;
+height:30px;
+background: black;
+border: 2px solid black;
+border-radius: 50%;
+cursor: pointer;
+}
+.slider input[type="range"]::-webkit-slider-thumb:hover {
+background: black;
+}
+    </style>
+</head>
+<body>
+    
+    <form method="POST" style = "position:fixed; top:15%; left:5%;">
+        <p >Use the range slider to select a seed value:</p>
+        <div>
+            <input type="range" min="0" max="1000" value="50" class="slider" id="myRange" name = "seed">
+            <p style = "position:fixed; top:22%; left:10%;" span id="demo"></span></p>
+        </div>
+        <br><br>
+        <p>Select which buttons are active:</p>
+        <div  style = "position:fixed; top:35%; left:15%;" >
+            <div>
+                <input type="checkbox" id="button1" name="button1" value="True">
+                <label for="button1">Age</label>
+            </div>
+            <div>
+                <input type="checkbox" id="button2" name="button2" value="True">
+                <label for="button2">Eye Glasses</label>
+            </div>
+            <div>
+                <input type="checkbox" id="button3" name="button3" value="True">
+                <label for="button3">Gender</label>
+            </div>
+            <div>
+                <input type="checkbox" id="button4" name="button4" value="True">
+                <label for="button4">Pose</label>
+            </div>
+            <div>
+                <input type="checkbox" id="button5" name="button5" value="True">
+                <label for="button5">Smile</label>
+            </div>
+            <br>
+            <button type="submit" style = "position:absolute;left:50%;border-radius:5px;">Generate</button>
+           </div>
+    </form> 
+    <script>
+        var slider = document.getElementById("myRange");
+        var output = document.getElementById("demo");
+        output.innerHTML = slider.value;
+        
+        slider.oninput = function() {
+          output.innerHTML = this.value;
+        }
+    </script>
+</body>
+
+
+</html>

@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>My App</title>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+    <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.js"></script>
+    <link rel="stylesheet" href="https://code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css">
+    <style>
+        .slider {
+        transform: translate(-50%,-50%);
+        width: 500px;
+        height: 60px;
+        background: #ffffff;
+        border-radius: 20px;
+        display: flex;
+        align-items: center;
+        }
+        .slider p {
+        font-size: 26px;
+        font-weight: 600;
+        font-family: Open Sans;
+        padding-left: 30px;
+        color: black;
+        }
+        .slider input[type="range"]::-webkit-slider-thumb  {
+        -webkit-appearance:none !important;
+        width: 420px;
+        height: 2px;
+        background: black;
+        border: none;
+        outline: none;
+        }
+        .slider input[type="range"]::-webkit-slider-thumb {
+        -webkit-appearance: none !important;
+        width: 30px;
+        height:30px;
+        background: black;
+        border: 2px solid black;
+        border-radius: 50%;
+        cursor: pointer;
+        }
+        .slider input[type="range"]::-webkit-slider-thumb:hover {
+        background: black;
+        }
+    </style>
+</head>
+<body>
+    <a href="/" ><button style="position:fixed; top:20px; left:20px;">Back</button></a>
+    <img style="position:fixed; top:10%; left:10%;" src = "{{ url_for('static', filename='image.jpg') }}" alt = "generated image" height="512px" width="512px">    
+
+    
+    <div id = "sliderName"> </div>
+    <form method="POST">
+		<div id="sliderContainer"></div>
+        <div id="sliderValues"></div>
+        <div>
+    		<button type="submit" style="position:fixed; top:85%; left:25%;">Generate</button>
+        </div>
+    </form>
+
+	
+
+	<script>
+        // console.log("hd");
+		// var sliderIds = document.getElementById(request.args.get('attr', '')).value.split(",");
+        var sliderIds = '{{attr}}'.split(",");
+        myvar = '{{dic | tojson}}';
+        var sliderDic = JSON.parse( JSON.stringify(JSON.parse(myvar)));
+        console.log(sliderDic)
+        console.log(myvar)
+        console.log(sliderIds)
+		var sliderContainer = document.getElementById("sliderContainer");
+        var len = sliderIds.length
+
+        var body = document.body,
+            html = document.documentElement;
+        var height = Math.max( body.scrollHeight, body.offsetHeight, 
+                       html.clientHeight, html.scrollHeight, html.offsetHeight );
+        const pos = [];
+
+
+
+        for(var i =0; i < len; i++)
+        {
+                pos.push(height/2 - (len*35-i*70) - 30);
+                console.log(pos[i].toString(10).concat("px"))
+        }
+        console.log(len)
+		for (var i = 0; i < len; i++) {
+			var slider = document.createElement("input");
+			slider.type = "range";
+            console.log(sliderDic[sliderIds[i]])
+            slider.value = sliderDic[sliderIds[i]] ;
+            slider.max = 2.0;
+            slider.min = -2.0;
+            slider.style.position = "fixed";
+            slider.style.top = pos[i].toString(10).concat("px");
+            slider.style.left = "50%";
+            slider.style.width= "500px";
+            slider.style.height= "60px";
+            slider.step = 0.01;
+			slider.id = sliderIds[i];
+			slider.name = sliderIds[i];
+			sliderContainer.appendChild(slider);
+
+
+			var valueDisplay = document.createElement("div");
+			valueDisplay.id = "valueDisplay" + sliderIds[i];
+			valueDisplay.innerHTML = sliderDic[sliderIds[i]].toString(10);
+            valueDisplay.style.position = "fixed";
+            valueDisplay.style.top = (pos[i]+ 22).toString(10).concat("px");
+            valueDisplay.style.left = "46%";
+			document.getElementById("sliderValues").appendChild(valueDisplay);
+
+            var nameDisplay = document.createElement("div");
+            var p = document.createElement("p");
+            var str = new String(sliderIds[i][0].toUpperCase().concat(sliderIds[i].slice(1, sliderIds[i].length).concat(" :")))
+            var node = document.createTextNode(str);
+            p.appendChild(node);
+            nameDisplay.appendChild(p);
+            nameDisplay.style.position = "fixed";
+            nameDisplay.style.top = (pos[i]-20).toString(10).concat("px");
+            nameDisplay.style.left = "45%";
+            document.getElementById("sliderName").appendChild(nameDisplay);
+
+			slider.addEventListener("input", function() {
+				var value = this.value;
+				var id = this.id;
+				document.getElementById("valueDisplay" + id).innerHTML = value;
+			});
+		}
+
+        // var button = document.getElementById("button")
+        // button.style.position = "fixed";
+        // button.style.top = (pos[pos.length -1] + 60).toString(10).concat("px")
+        // button.style.left = "65%"
+	</script>
+</body>
